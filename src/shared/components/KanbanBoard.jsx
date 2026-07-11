@@ -2,7 +2,7 @@
 //  KanbanBoard — drag-and-drop task board
 //  Optimistic UI + server sync
 // ════════════════════════════════════════════════════════════
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   DndContext, DragOverlay, PointerSensor, useSensor, useSensors, closestCorners,
 } from '@dnd-kit/core';
@@ -10,7 +10,7 @@ import {
   SortableContext, useSortable, verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, AlertCircle, Clock, CheckCircle, Loader2, GripVertical } from 'lucide-react';
+import { Plus, AlertCircle, Clock, CheckCircle, Loader2, GripVertical, Paperclip, X } from 'lucide-react';
 import api from '../../lib/api';
 import notify from '../../lib/toast';
 import { formatRelative } from '../../lib/utils';
@@ -39,6 +39,7 @@ const TaskCard = ({ task, isOverlay = false, canEdit = true, onClick }) => {
   });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
   const StatusIcon = STATUS_ICON[task.status] || Clock;
+  const overdue = task.dueDate && task.status !== 'DONE' && new Date(task.dueDate) < new Date();
   return (
     <div
       ref={setNodeRef}
@@ -63,8 +64,13 @@ const TaskCard = ({ task, isOverlay = false, canEdit = true, onClick }) => {
         {canEdit && <GripVertical size={12} style={{ color: 'var(--muted)', opacity: 0.4, flexShrink: 0 }} />}
       </div>
       {task.dueDate && (
+        <p style={{ fontSize: 11, color: overdue ? '#dc2626' : 'var(--muted)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontWeight: overdue ? 700 : 400 }}>
+          <Clock size={10} /> {overdue ? 'Overdue —' : 'Due'} {formatRelative(task.dueDate)}
+        </p>
+      )}
+      {Array.isArray(task.attachmentIds) && task.attachmentIds.length > 0 && (
         <p style={{ fontSize: 11, color: 'var(--muted)', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-          <Clock size={10} /> Due {formatRelative(task.dueDate)}
+          <Paperclip size={10} /> {task.attachmentIds.length} file{task.attachmentIds.length > 1 ? 's' : ''}
         </p>
       )}
       {task.assignee && (
@@ -120,45 +126,128 @@ const Column = ({ column, tasks, canEdit, onAdd, onClickTask }) => {
   );
 };
 
-const TaskModal = ({ task, onClose, onSave }) => {
+// ── Task create/edit modal — now with assignee + due date + status + attachments ──
+export const TaskModal = ({ task, interns = [], onClose, onSave, onDelete }) => {
   const [title, setTitle] = useState(task?.title || '');
+  const [description, setDescription] = useState(task?.description || '');
   const [priority, setPriority] = useState(task?.priority || 'MEDIUM');
+  const [status, setStatus] = useState(task?.status || 'TODO');
   const [dueDate, setDueDate] = useState(task?.dueDate ? new Date(task.dueDate).toISOString().slice(0, 10) : '');
+  const [assigneeId, setAssigneeId] = useState(task?.assigneeId || task?.assignee?.id || '');
+  const [attachments, setAttachments] = useState(task?.attachmentFiles || []); // [{id, originalName}]
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const fileRef = useRef(null);
+
   if (!task) return null;
-  const isNew = !task._id;
+  const isNew = !task.id;
+
+  const attachFile = async (f) => {
+    if (!f) return;
+    setUploading(true);
+    const form = new FormData();
+    form.append('file', f);
+    try {
+      const { data } = await api.post('/files', form, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setAttachments((arr) => [...arr, data.file]);
+    } catch { notify.error('Upload failed'); }
+    setUploading(false);
+    if (fileRef.current) fileRef.current.value = '';
+  };
+
+  const removeAttachment = (id) => setAttachments((arr) => arr.filter((a) => a.id !== id));
+
   const save = async () => {
     if (!title.trim()) return notify.error('Title is required');
     setSaving(true);
     try {
-      await onSave({ ...task, title, priority, dueDate: dueDate || null });
+      await onSave({
+        id: task.id || null,
+        projectId: task.projectId,
+        title: title.trim(),
+        description: description.trim() || undefined,
+        priority,
+        status,
+        dueDate: dueDate || null,
+        assigneeId: assigneeId || null,
+        attachmentIds: attachments.map((a) => a.id),
+      });
       onClose();
-    } catch (err) { notify.error(err.response?.data?.error || 'Failed'); }
+    } catch (err) {
+      notify.error(err.response?.data?.error || 'Failed to save task');
+    }
     setSaving(false);
   };
+
+  const inputStyle = { width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text)', fontSize: 14 };
+  const labelStyle = { fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.04, display: 'block', marginBottom: 4 };
+
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-      <div style={{ background: 'var(--card)', borderRadius: 16, padding: 24, width: 'min(90vw, 480px)', border: '1px solid var(--border)' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 16 }}>
+      <div style={{ background: 'var(--card)', borderRadius: 16, padding: 24, width: 'min(92vw, 520px)', border: '1px solid var(--border)', maxHeight: '90vh', overflowY: 'auto' }}>
         <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, color: 'var(--text)' }}>{isNew ? 'New task' : 'Edit task'}</h3>
-        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title"
-          style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text)', fontSize: 14, marginBottom: 12 }} />
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+
+        <label style={labelStyle}>Title</label>
+        <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Task title" style={{ ...inputStyle, marginBottom: 12 }} />
+
+        <label style={labelStyle}>Description</label>
+        <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What needs to be done?" rows={3}
+          style={{ ...inputStyle, marginBottom: 12, resize: 'vertical' }} />
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.04, display: 'block', marginBottom: 4 }}>Priority</label>
-            <select value={priority} onChange={(e) => setPriority(e.target.value)}
-              style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text)', fontSize: 13 }}>
+            <label style={labelStyle}>Priority</label>
+            <select value={priority} onChange={(e) => setPriority(e.target.value)} style={inputStyle}>
               {['LOW', 'MEDIUM', 'HIGH', 'URGENT'].map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.04, display: 'block', marginBottom: 4 }}>Due date</label>
-            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
-              style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1px solid var(--border)', background: 'var(--input-bg)', color: 'var(--text)', fontSize: 13 }} />
+            <label style={labelStyle}>Status</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} style={inputStyle}>
+              {['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED'].map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+            </select>
           </div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-          <button onClick={onClose} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
-          <button onClick={save} disabled={saving} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#ff6d34', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving…' : 'Save'}</button>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+          <div>
+            <label style={labelStyle}>Due date</label>
+            <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} style={inputStyle} />
+          </div>
+          <div>
+            <label style={labelStyle}>Assign to</label>
+            <select value={assigneeId} onChange={(e) => setAssigneeId(e.target.value)} style={inputStyle}>
+              <option value="">Unassigned</option>
+              {interns.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <label style={labelStyle}>Attachments</label>
+        <div style={{ marginBottom: 16 }}>
+          {attachments.map((a) => (
+            <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text)', padding: '6px 10px', background: 'var(--bg)', borderRadius: 8, marginBottom: 4 }}>
+              <Paperclip size={12} style={{ flexShrink: 0 }} />
+              <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.originalName}</span>
+              <button onClick={() => removeAttachment(a.id)} style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', padding: 0 }}><X size={12} /></button>
+            </div>
+          ))}
+          <input ref={fileRef} type="file" hidden onChange={(e) => attachFile(e.target.files?.[0])} />
+          <button onClick={() => fileRef.current?.click()} disabled={uploading}
+            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--muted)', background: 'var(--bg)', border: '1px dashed var(--border)', borderRadius: 8, padding: '8px 12px', cursor: 'pointer', width: '100%', justifyContent: 'center' }}>
+            {uploading ? <Loader2 size={12} className="animate-spin" /> : <Paperclip size={12} />}
+            {uploading ? 'Uploading…' : 'Attach a file'}
+          </button>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+          {!isNew && onDelete ? (
+            <button onClick={() => onDelete(task)} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'transparent', color: '#dc2626', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Delete</button>
+          ) : <span />}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={onClose} style={{ padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--text)', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Cancel</button>
+            <button onClick={save} disabled={saving} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: '#ff6d34', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{saving ? 'Saving…' : 'Save'}</button>
+          </div>
         </div>
       </div>
     </div>
@@ -229,7 +318,6 @@ const KanbanBoard = ({ projectId, canEdit = true }) => {
     } else return;
 
     if (newStatus === aData.task.status) return;
-    // Optimistic update
     setTasks((arr) => arr.map((t) => t.id === aData.task.id ? { ...t, status: newStatus } : t));
     try {
       await api.patch(`/tasks/${aData.task.id}`, { status: newStatus });
@@ -241,18 +329,41 @@ const KanbanBoard = ({ projectId, canEdit = true }) => {
   };
 
   const onAdd = (status) => {
-    setModalTask({ title: '', priority: 'MEDIUM', status, projectId, _id: null });
+    setModalTask({ title: '', priority: 'MEDIUM', status, projectId, id: null });
   };
 
-  const onSaveTask = async (task) => {
-    if (task._id) {
-      await api.post('/tasks', {
-        title: task.title, priority: task.priority, dueDate: task.dueDate, status: task.status, projectId: task.projectId,
+  // FIX: previously checked task._id (always undefined) so this branch never
+  // ran — POST/PATCH never fired. Now correctly creates or updates.
+  const onSaveTask = async (data) => {
+    if (data.id) {
+      await api.patch(`/tasks/${data.id}`, {
+        title: data.title, description: data.description, priority: data.priority,
+        status: data.status, dueDate: data.dueDate, assigneeId: data.assigneeId,
+        attachmentIds: data.attachmentIds,
       });
+      notify.success('Task updated');
+    } else {
+      await api.post('/tasks', {
+        projectId: data.projectId, title: data.title, description: data.description,
+        priority: data.priority, status: data.status, dueDate: data.dueDate,
+        assigneeId: data.assigneeId, attachmentIds: data.attachmentIds,
+      });
+      notify.success('Task created');
     }
     fetch();
-    notify.success('Task created');
   };
+
+  const onDeleteTask = async (task) => {
+    if (!window.confirm(`Delete "${task.title}"?`)) return;
+    try {
+      await api.delete(`/tasks/${task.id}`);
+      notify.success('Task deleted');
+      setModalTask(null);
+      fetch();
+    } catch (err) { notify.error(err.response?.data?.error || 'Failed to delete'); }
+  };
+
+  const interns = (project?.interns || []).map((i) => i.user).filter(Boolean);
 
   if (loading) return <div style={{ padding: 40, textAlign: 'center', color: 'var(--muted)' }}><Loader2 size={20} className="animate-spin" style={{ display: 'inline-block', verticalAlign: 'middle' }} /></div>;
 
@@ -279,7 +390,9 @@ const KanbanBoard = ({ projectId, canEdit = true }) => {
         </div>
         <DragOverlay>{activeTask && <TaskCard task={activeTask} isOverlay />}</DragOverlay>
       </DndContext>
-      {modalTask && <TaskModal task={modalTask} onClose={() => setModalTask(null)} onSave={onSaveTask} />}
+      {modalTask && (
+        <TaskModal task={modalTask} interns={interns} onClose={() => setModalTask(null)} onSave={onSaveTask} onDelete={onDeleteTask} />
+      )}
     </div>
   );
 };

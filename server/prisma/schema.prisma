@@ -263,6 +263,7 @@ model ProjectTask {
   priority    TaskPriority @default(MEDIUM)
   dueDate     DateTime?
   completedAt DateTime?
+  attachmentIds String[] @default([])
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 

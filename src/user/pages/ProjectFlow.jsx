@@ -34,13 +34,15 @@ const ProjectFlow = () => {
     value: tasks.filter((t) => t.status === s).length,
   })).filter((s) => s.value > 0);
 
-  const progress = [
-    { name: 'Start', progress: 10, tasks: 5 },
-    { name: 'Sprint 1', progress: 30, tasks: 12 },
-    { name: 'Sprint 2', progress: 55, tasks: 18 },
-    { name: 'Sprint 3', progress: 80, tasks: 24 },
-    { name: 'Ship', progress: 100, tasks: 30 },
-  ];
+  const progress = projects.map((p) => {
+    const projectTasks = tasks.filter((t) => t.projectId === p.id);
+    const completed = projectTasks.filter((t) => t.status === 'DONE').length;
+    return {
+      name: p.name.length > 14 ? `${p.name.slice(0, 14)}…` : p.name,
+      progress: projectTasks.length ? Math.round((completed / projectTasks.length) * 100) : 0,
+      tasks: projectTasks.length,
+    };
+  });
 
   return (
     <div className="space-y-6">

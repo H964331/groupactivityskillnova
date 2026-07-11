@@ -213,6 +213,7 @@ api.post(
       status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED']).default('TODO'),
       priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
       dueDate: z.coerce.date().optional(),
+      attachmentIds: z.array(z.string().cuid()).optional(),
     })
   ),
   projects.createTask
@@ -228,6 +229,7 @@ api.patch(
       status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED']).optional(),
       priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
       dueDate: z.coerce.date().optional(),
+      attachmentIds: z.array(z.string().cuid()).optional(),
       assigneeId: z.string().cuid().nullable().optional(),
     })
   ),

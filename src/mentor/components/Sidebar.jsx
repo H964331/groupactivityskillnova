@@ -3,7 +3,8 @@
 // ════════════════════════════════════════════════════════════
 import { useState } from 'react';
 import {
-  LayoutDashboard, Users, FileText, Activity, BookOpen, MessageSquare,
+  LayoutDashboard, Users, FileText, Activity,ClipboardList,
+ListChecks, BookOpen, MessageSquare,
   Megaphone, Bot, User, Settings, ChevronLeft, ChevronRight, LogOut,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/auth';
@@ -14,6 +15,8 @@ const MENU = [
   { id: 'interns',       label: 'My Interns',     icon: Users           },
   { id: 'reports',       label: 'Report Reviews', icon: FileText        },
   { id: 'projects',      label: 'Projects',       icon: Activity        },
+  { id: 'assignments',   label: 'Assignments',    icon: ClipboardList   }, // NEW
+  { id: 'taskdashboard', label: 'Task Dashboard', icon: ListChecks      }, // NEW
   { id: 'knowledge',     label: 'Knowledge Base', icon: BookOpen        },
   { id: 'qa',            label: 'Q&A Forum',      icon: MessageSquare   },
   { id: 'announcements', label: 'Announcements',  icon: Megaphone       },
