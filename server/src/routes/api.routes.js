@@ -7,6 +7,7 @@ import * as reports from '../controllers/reports.controller.js';
 import * as announcements from '../controllers/announcements.controller.js';
 import * as qa from '../controllers/qa.controller.js';
 import * as attendance from '../controllers/attendance.controller.js';
+import * as leave from '../controllers/leave.controller.js';
 import * as projects from '../controllers/projects.controller.js';
 import * as ai from '../controllers/ai.controller.js';
 import * as notif from '../controllers/notifications.controller.js';
@@ -142,7 +143,8 @@ api.post(
 api.post('/qa/answers/:id/accept', requirePermission('qa:update'), validate(idParam, 'params'), qa.acceptAnswer);
 
 // ── Attendance ────────────────────────────────────────────
-api.get('/attendance', requirePermission('attendance:read'), validate(schemas.pagination, 'query'), attendance.list);
+api.get('/attendance', requirePermission('attendance:self'), validate(schemas.pagination, 'query'), attendance.list);
+api.get('/attendance/today', requirePermission('attendance:self'), attendance.today);
 api.get('/attendance/summary', requirePermission('attendance:self'), attendance.summary);
 api.post(
   '/attendance/mark',
@@ -162,8 +164,36 @@ api.post(
 api.post(
   '/attendance/check',
   requirePermission('attendance:self'),
-  validate(z.object({ status: z.enum(['PRESENT', 'LEAVE']).default('PRESENT'), notes: z.string().max(300).optional() })),
+  validate(z.object({ action: z.enum(['CHECK_IN', 'CHECK_OUT']), notes: z.string().max(300).optional() })),
   attendance.checkInOut
+);
+
+// ── Leave Requests ────────────────────────────────────────
+api.get('/leave-requests', requirePermission('attendance:self'), validate(schemas.pagination, 'query'), leave.list);
+api.post(
+  '/leave-requests',
+  requirePermission('attendance:self'),
+  validate(
+    z.object({
+      leaveType: z.string().trim().min(2).max(50),
+      startDate: z.coerce.date(),
+      endDate: z.coerce.date(),
+      reason: z.string().trim().min(1).max(500),
+    })
+  ),
+  leave.create
+);
+api.patch(
+  '/leave-requests/:id/review',
+  requirePermission('attendance:mark'),
+  validate(idParam, 'params'),
+  validate(
+    z.object({
+      status: z.enum(['APPROVED', 'REJECTED']),
+      reviewerNote: z.string().max(300).optional(),
+    })
+  ),
+  leave.review
 );
 
 // ── Projects ──────────────────────────────────────────────

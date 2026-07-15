@@ -11,6 +11,7 @@ const Reports        = lazy(() => import('./pages/Reports'));
 const Projects       = lazy(() => import('./pages/Projects'));
 const Assignments    = lazy(() => import('./pages/Assignments'));   // NEW
 const TaskDashboard  = lazy(() => import('./pages/TaskDashboard')); // NEW
+const LeaveApprovals = lazy(() => import('./pages/LeaveApprovals'));
 const KnowledgeBase  = lazy(() => import('./pages/KnowledgeBase'));
 const QnA            = lazy(() => import('./pages/QnA'));
 const Announcements  = lazy(() => import('./pages/Announcements'));
@@ -25,6 +26,7 @@ const PAGES = {
   projects:       <Suspense fallback={<PageLoader />}><Projects /></Suspense>,
   assignments:    <Suspense fallback={<PageLoader />}><Assignments /></Suspense>,    // NEW
   taskdashboard:  <Suspense fallback={<PageLoader />}><TaskDashboard /></Suspense>,  // NE
+  'leave-approvals': <Suspense fallback={<PageLoader />}><LeaveApprovals /></Suspense>,
   knowledge:      <Suspense fallback={<PageLoader />}><KnowledgeBase /></Suspense>,
   qa:             <Suspense fallback={<PageLoader />}><QnA /></Suspense>,
   announcements:  <Suspense fallback={<PageLoader />}><Announcements /></Suspense>,
