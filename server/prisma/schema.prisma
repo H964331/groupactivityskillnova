@@ -78,6 +78,9 @@ model User {
   @@index([role])
   @@index([status])
   @@index([department])
+  feedbackReceived MentorFeedback[] @relation("InternFeedback")
+  feedbackGiven    MentorFeedback[] @relation("MentorFeedback")
+  certificates     Certificate[]
 }
 
 model InternProfile {
@@ -529,6 +532,7 @@ model FileAsset {
 
   @@index([uploaderId])
   @@index([mimeType])
+  certificate Certificate?
 }
 
 // ── Webhooks ─────────────────────────────────────────────────
@@ -620,5 +624,47 @@ model MeetingAttendee {
   createdAt DateTime @default(now())
 
   @@unique([meetingId, userId])
+  @@index([userId])
+}
+// ── Mentor Feedback ─────────────────────────────────────────
+enum CompletionStatus {
+  IN_PROGRESS
+  COMPLETED
+  TERMINATED
+}
+
+model MentorFeedback {
+  id               String            @id @default(cuid())
+  internId         String
+  intern           User              @relation("InternFeedback", fields: [internId], references: [id], onDelete: Cascade)
+  mentorId         String
+  mentor           User              @relation("MentorFeedback", fields: [mentorId], references: [id])
+  rating           Int               // 1–5
+  completionStatus CompletionStatus  @default(IN_PROGRESS)
+  comments         String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  certificate      Certificate?
+
+  @@index([internId])
+  @@index([mentorId])
+}
+
+// ── Certificate ─────────────────────────────────────────────
+model Certificate {
+  id             String         @id @default(cuid())
+  userId         String
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feedbackId     String?        @unique
+  feedback       MentorFeedback? @relation(fields: [feedbackId], references: [id])
+  role           String         // e.g. "Frontend Intern"
+  startDate      DateTime
+  endDate        DateTime
+  templateVersion String        @default("v1")
+  fileAssetId    String?        @unique
+  fileAsset      FileAsset?     @relation(fields: [fileAssetId], references: [id])
+  issuedAt       DateTime       @default(now())
+
   @@index([userId])
 }

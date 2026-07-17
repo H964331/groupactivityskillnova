@@ -4,6 +4,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import * as reports from '../controllers/reports.controller.js';
+import * as feedback from '../controllers/feedback.controller.js';
+import * as certificates from '../controllers/certificates.controller.js';
 import * as announcements from '../controllers/announcements.controller.js';
 import * as qa from '../controllers/qa.controller.js';
 import * as attendance from '../controllers/attendance.controller.js';
@@ -69,7 +71,49 @@ api.patch(
   reports.review
 );
 api.delete('/reports/:id', requirePermission('reports:delete'), validate(idParam, 'params'), reports.remove);
+// ── Mentor Feedback ───────────────────────────────────────
+api.get(
+  '/feedback',
+  requirePermission('feedback:read'),
+  validate(schemas.pagination, 'query'),
+  feedback.list
+);
+api.get('/feedback/:id', requirePermission('feedback:read'), validate(idParam, 'params'), feedback.getById);
+api.post(
+  '/feedback',
+  requirePermission('feedback:create'),
+  validate(
+    z.object({
+      internId: z.string().cuid(),
+      rating: z.coerce.number().int().min(1).max(5),
+      completionStatus: z.enum(['IN_PROGRESS', 'COMPLETED', 'TERMINATED']).default('IN_PROGRESS'),
+      comments: z.string().max(2000).optional(),
+    })
+  ),
+  feedback.create
+);
 
+// ── Certificates ──────────────────────────────────────────
+api.get(
+  '/certificates',
+  requirePermission('certificates:read'),
+  validate(schemas.pagination, 'query'),
+  certificates.list
+);
+api.get('/certificates/:id', requirePermission('certificates:read'), validate(idParam, 'params'), certificates.getById);
+api.post(
+  '/certificates/generate',
+  requirePermission('certificates:generate'),
+  validate(
+    z.object({
+      feedbackId: z.string().cuid(),
+      role: z.string().max(120).optional(),
+      startDate: z.coerce.date(),
+      endDate: z.coerce.date(),
+    })
+  ),
+  certificates.generate
+);
 // ── Announcements ─────────────────────────────────────────
 api.get(
   '/announcements',
