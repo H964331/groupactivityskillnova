@@ -19,7 +19,7 @@ import { validate, schemas } from '../middleware/validate.js';
 const api = Router();
 api.use(authenticate, requireAuth);
 
-const idParam = z.object({ id: z.string().cuid() });
+const idParam = z.object({ id: z.string().min(1) });
 
 // ── Reports ───────────────────────────────────────────────
 api.get(
@@ -243,6 +243,18 @@ api.patch(
   projects.updateProject
 );
 api.delete('/projects/:id', requirePermission('projects:delete'), validate(idParam, 'params'), projects.deleteProject);
+api.patch(
+  '/projects/:id/interns',
+  requirePermission('projects:update'),
+  validate(idParam, 'params'),
+  validate(
+    z.object({
+      userId: z.string().cuid(),
+      remove: z.boolean().optional(),
+    })
+  ),
+  projects.assignIntern
+);
 
 api.get('/tasks', requirePermission('tasks:read'), validate(schemas.pagination, 'query'), projects.listTasks);
 api.post(
@@ -250,8 +262,8 @@ api.post(
   requirePermission('tasks:create'),
   validate(
     z.object({
-      projectId: z.string().cuid(),
-      assigneeId: z.string().cuid().optional().nullable(),
+      projectId: z.string().min(1),
+      assigneeId: z.string().min(1).optional().nullable(),
       title: z.string().min(3).max(200),
       description: z.string().max(2000).optional(),
       status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED']).default('TODO'),
@@ -274,7 +286,7 @@ api.patch(
       priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
       dueDate: z.coerce.date().optional(),
       attachmentIds: z.array(z.string().cuid()).optional(),
-      assigneeId: z.string().cuid().nullable().optional(),
+      assigneeId: z.string().min(1).nullable().optional(),
     })
   ),
   projects.updateTask
