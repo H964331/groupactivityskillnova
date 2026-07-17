@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════
 //  ADMIN — pages/AdminPanel.jsx (User Management, API)
 // ════════════════════════════════════════════════════════════
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Search, Plus, Trash2, ShieldCheck, UserCheck, Users, Loader2 } from 'lucide-react';
 import { Card, Badge, SectionHeader, Modal, Input } from '../../shared/components/UI';
 import api from '../../lib/api';
@@ -22,14 +22,14 @@ const AdminPanel = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({ email: '', password: '', name: '', role: 'INTERN', department: '' });
 
-  const fetch = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await api.get('/users', { params: { limit: 100, search: search || undefined, role: roleFilter || undefined, status: statusFilter || undefined } });
       setUsers(data.items);
     } finally { setLoading(false); }
-  };
-  useEffect(() => { fetch(); }, [search, roleFilter, statusFilter]);
+  }, [roleFilter, search, statusFilter]);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   const add = async () => {
     if (!form.email || !form.password || !form.name) return notify.error('Fill all required fields.');
@@ -38,7 +38,7 @@ const AdminPanel = () => {
       notify.success('User created.');
       setModalOpen(false);
       setForm({ email: '', password: '', name: '', role: 'INTERN', department: '' });
-      fetch();
+      fetchUsers();
     } catch (err) {
       notify.error(err.response?.data?.error || 'Failed to create user.');
     }
@@ -47,19 +47,19 @@ const AdminPanel = () => {
   const toggleRole = async (u) => {
     const next = u.role === 'INTERN' ? 'MENTOR' : 'INTERN';
     if (next === 'SUPER_ADMIN' && me?.role !== 'SUPER_ADMIN') return notify.error('Only super admins can grant SUPER_ADMIN');
-    try { await api.patch(`/users/${u.id}/role`, { role: next }); notify.success(`Role updated to ${next}`); fetch(); }
+    try { await api.patch(`/users/${u.id}/role`, { role: next }); notify.success(`Role updated to ${next}`); fetchUsers(); }
     catch (err) { notify.error(err.response?.data?.error || 'Failed'); }
   };
 
   const toggleStatus = async (u) => {
     const next = u.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    try { await api.patch(`/users/${u.id}/status`, { status: next }); notify.success(`Status: ${next}`); fetch(); }
+    try { await api.patch(`/users/${u.id}/status`, { status: next }); notify.success(`Status: ${next}`); fetchUsers(); }
     catch (err) { notify.error(err.response?.data?.error || 'Failed'); }
   };
 
   const remove = async (u) => {
     if (!window.confirm(`Delete ${u.name}? This is irreversible.`)) return;
-    try { await api.delete(`/users/${u.id}`); notify.success('User deleted.'); fetch(); }
+    try { await api.delete(`/users/${u.id}`); notify.success('User deleted.'); fetchUsers(); }
     catch (err) { notify.error(err.response?.data?.error || 'Failed'); }
   };
 

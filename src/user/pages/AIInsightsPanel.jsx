@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════
 //  USER — pages/AIInsightsPanel.jsx
 // ════════════════════════════════════════════════════════════
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Sparkles, TrendingUp, Calendar, AlertTriangle, Trophy,
@@ -96,7 +96,7 @@ const AIInsightsPanel = () => {
     ];
   };
 
-  const loadData = async (isRefresh = false) => {
+  const loadData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     setError(null);
@@ -126,17 +126,17 @@ const AIInsightsPanel = () => {
       // Generate insights based on actual data
       const generated = generateInsights(statsData, tasksList, attendanceData);
       setInsights(generated);
-    } catch (err) {
+    } catch {
       setError('Could not compile AI performance insights. Please try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   return (
     <div className="space-y-6 pb-16">

@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════
 //  ADMIN — pages/KnowledgeBase.jsx (API-driven, full editor)
 // ════════════════════════════════════════════════════════════
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Search, BookOpen, Eye, ThumbsUp, Loader2, Plus, Trash2, ShieldCheck, X } from 'lucide-react';
 import { Card, Badge, SectionHeader, Modal, Input } from '../../shared/components/UI';
 import api from '../../lib/api';
@@ -17,7 +17,7 @@ const KnowledgeBase = () => {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ title: '', content: '', excerpt: '', categoryId: '', tags: '', status: 'PUBLISHED' });
 
-  const fetch = async () => {
+  const fetchArticles = useCallback(async () => {
     setLoading(true);
     try {
       const [a, c] = await Promise.all([api.get('/kb/articles', { params: { limit: 100 } }), api.get('/kb/categories')]);
@@ -25,8 +25,8 @@ const KnowledgeBase = () => {
       setCategories(c.data.items);
       if (c.data.items.length && !form.categoryId) setForm((f) => ({ ...f, categoryId: c.data.items[0].id }));
     } finally { setLoading(false); }
-  };
-  useEffect(() => { fetch(); }, []);
+  }, [form.categoryId]);
+  useEffect(() => { fetchArticles(); }, [fetchArticles]);
 
   const filtered = articles.filter((a) =>
     (category === 'all' || a.categoryId === category) &&
@@ -34,13 +34,13 @@ const KnowledgeBase = () => {
   );
 
   const toggleVerify = async (a) => {
-    try { await api.patch(`/kb/articles/${a.id}/verify`, { verified: !a.verified }); notify.success(a.verified ? 'Unverified' : 'Verified ✓'); fetch(); }
+    try { await api.patch(`/kb/articles/${a.id}/verify`, { verified: !a.verified }); notify.success(a.verified ? 'Unverified' : 'Verified ✓'); fetchArticles(); }
     catch (err) { notify.error(err.response?.data?.error || 'Failed'); }
   };
 
   const remove = async (a) => {
     if (!window.confirm(`Delete "${a.title}"?`)) return;
-    try { await api.delete(`/kb/articles/${a.id}`); notify.success('Deleted.'); fetch(); }
+    try { await api.delete(`/kb/articles/${a.id}`); notify.success('Deleted.'); fetchArticles(); }
     catch (err) { notify.error(err.response?.data?.error || 'Failed'); }
   };
 
@@ -54,7 +54,7 @@ const KnowledgeBase = () => {
       notify.success('Article created.');
       setShowForm(false);
       setForm({ title: '', content: '', excerpt: '', categoryId: categories[0]?.id ?? '', tags: '', status: 'PUBLISHED' });
-      fetch();
+      fetchArticles();
     } catch (err) { notify.error(err.response?.data?.error || 'Failed.'); }
   };
 

@@ -103,7 +103,7 @@ const GoalProgressKPI = () => {
           avgCompletionTime: '2.3 days', // Hardcoded metric calculation placeholder
           avgScore: stats?.averageScore ?? 8.8
         });
-      } catch (err) {
+      } catch {
         /* ignore fallback to mock state */
       } finally {
         setLoading(false);
