@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════
 //  USER — pages/AIInsightsPanel.jsx
 // ════════════════════════════════════════════════════════════
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Sparkles, TrendingUp, Calendar, AlertTriangle, Trophy,
@@ -96,7 +96,7 @@ const AIInsightsPanel = () => {
     ];
   };
 
-  const loadData = async (isRefresh = false) => {
+  const loadData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     setError(null);
@@ -132,12 +132,11 @@ const AIInsightsPanel = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadData]);
 
   return (
     <div className="space-y-6 pb-16">
