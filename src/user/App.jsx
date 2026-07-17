@@ -22,9 +22,17 @@ const Files            = lazy(() => import('./pages/Files'));
 const Notifications    = lazy(() => import('./pages/Notifications'));
 const Exports          = lazy(() => import('./pages/Exports'));
 const SkillGapAnalyzer = lazy(() => import('./pages/SkillGapAnalyzer'));
+const AIInsightsPanel = lazy(() => import('./pages/AIInsightsPanel'));
+const LeaderboardSystem = lazy(() => import('./pages/LeaderboardSystem'));
+const GoalProgressKPI = lazy(() => import('./pages/GoalProgressKPI'));
+const ProductivityAnalytics = lazy(() => import('./pages/ProductivityAnalytics'));
 
 const PAGES = {
   dashboard:      <Dashboard />,
+  ai_insights:    <Suspense fallback={<PageLoader />}><AIInsightsPanel /></Suspense>,
+  leaderboard:    <Suspense fallback={<PageLoader />}><LeaderboardSystem /></Suspense>,
+  goal_progress:  <Suspense fallback={<PageLoader />}><GoalProgressKPI /></Suspense>,
+  productivity:   <Suspense fallback={<PageLoader />}><ProductivityAnalytics /></Suspense>,
   knowledge:      <Suspense fallback={<PageLoader />}><KnowledgeBase /></Suspense>,
   qa:             <Suspense fallback={<PageLoader />}><QA /></Suspense>,
   project_flow:   <Suspense fallback={<PageLoader />}><ProjectFlow /></Suspense>,
