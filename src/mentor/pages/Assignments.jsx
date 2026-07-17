@@ -14,7 +14,7 @@ import { formatRelative } from '../../lib/utils';
 const STATUS_VARIANT = { TODO: 'default', IN_PROGRESS: 'warning', REVIEW: 'default', DONE: 'success', BLOCKED: 'danger' };
 
 const Assignments = () => {
-  const [projects] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [project, setProject] = useState(null);
   const [tasks, setTasks] = useState([]);
@@ -27,7 +27,7 @@ const Assignments = () => {
     try {
       const [p, t] = await Promise.all([
         api.get(`/projects/${activeId}`),
-        api.get('/tasks', { params: { projectId: activeId, limit: 200 } }),
+        api.get('/tasks', { params: { projectId: activeId, limit: 100 } }),
       ]);
       setProject(p.data.project);
       setTasks(t.data.items);
@@ -36,12 +36,13 @@ const Assignments = () => {
   }, [activeId]);
 
   useEffect(() => {
-  const run = async () => {
-    await loadProject();
-  };
-
-  run();
-}, [loadProject]);
+  api.get('/projects', { params: { limit: 50 } })
+    .then((r) => {
+      setProjects(r.data.items);
+      if (r.data.items[0]) setActiveId(r.data.items[0].id);
+    })
+    .catch(() => notify.error('Failed to load projects'));
+}, []);
 
   const interns = (project?.interns || []).map((i) => i.user).filter(Boolean);
 
