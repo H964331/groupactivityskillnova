@@ -126,7 +126,7 @@ const AIInsightsPanel = () => {
       // Generate insights based on actual data
       const generated = generateInsights(statsData, tasksList, attendanceData);
       setInsights(generated);
-    } catch (err) {
+    } catch {
       setError('Could not compile AI performance insights. Please try again.');
     } finally {
       setLoading(false);
@@ -136,6 +136,7 @@ const AIInsightsPanel = () => {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

@@ -76,7 +76,7 @@ const ProductivityAnalytics = () => {
           { day: 'Sun', count: 2 }
         ];
         setLoginStats(lStats);
-      } catch (err) {
+      } catch {
         /* ignore */
       } finally {
         setLoading(false);

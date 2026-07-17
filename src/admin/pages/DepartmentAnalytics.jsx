@@ -84,7 +84,6 @@ const DepartmentAnalytics = () => {
         setDeptStats(deptData);
         setMentors(MOCK_MENTORS_WORKLOAD);
 
-        const totalInterns = deptData.reduce((acc, curr) => acc + curr.interns, 0);
         const totalMentors = MOCK_MENTORS_WORKLOAD.length;
         const avgScorePlatform = Number((deptData.reduce((acc, curr) => acc + curr.avgScore, 0) / deptData.length).toFixed(2));
         const highestScoring = [...deptData].sort((a, b) => b.avgScore - a.avgScore)[0].name;
@@ -95,7 +94,7 @@ const DepartmentAnalytics = () => {
           platformAvgScore: avgScorePlatform,
           topDept: highestScoring
         });
-      } catch (err) {
+      } catch {
         /* ignore */
       } finally {
         setLoading(false);

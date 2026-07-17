@@ -121,7 +121,7 @@ const HealthRiskDashboard = () => {
         });
 
         setRiskList(MOCK_AT_RISK_INTERNS);
-      } catch (err) {
+      } catch {
         /* ignore */
       } finally {
         setLoading(false);
