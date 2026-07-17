@@ -16,6 +16,7 @@ const Profile          = lazy(() => import('./pages/Profile'));
 const Settings         = lazy(() => import('./pages/Settings'));
 const ProjectFlow      = lazy(() => import('./pages/ProjectFlow'));
 const Attendance       = lazy(() => import('./pages/Attendance'));
+const Certificate      = lazy(() => import('./pages/Certificate'));
 const KanbanPage       = lazy(() => import('./pages/Kanban'));
 const Calendar         = lazy(() => import('./pages/Calendar'));
 const Files            = lazy(() => import('./pages/Files'));
@@ -38,6 +39,7 @@ const PAGES = {
   project_flow:   <Suspense fallback={<PageLoader />}><ProjectFlow /></Suspense>,
   kanban:         <Suspense fallback={<PageLoader />}><KanbanPage /></Suspense>,
   calendar:       <Suspense fallback={<PageLoader />}><Calendar /></Suspense>,
+  certificate:    <Suspense fallback={<PageLoader />}><Certificate /></Suspense>,
   files:          <Suspense fallback={<PageLoader />}><Files /></Suspense>,
   reports:        <Suspense fallback={<PageLoader />}><Reports /></Suspense>,
   attendance:     <Suspense fallback={<PageLoader />}><Attendance /></Suspense>,
