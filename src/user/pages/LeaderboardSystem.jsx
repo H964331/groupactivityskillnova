@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Card, SectionHeader, Badge } from '../../shared/components/UI';
 
+
 const MotionDiv = motion.div;
 
 const MOCK_INTERNS_LEADERBOARD = [
