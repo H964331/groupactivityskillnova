@@ -16,7 +16,7 @@ const TaskDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/tasks', { params: { limit: 500 } })
+    api.get('/tasks', { params: { limit: 100 } })
       .then((r) => setTasks(r.data.items))
       .catch(() => notify.error('Failed to load tasks'))
       .finally(() => setLoading(false));

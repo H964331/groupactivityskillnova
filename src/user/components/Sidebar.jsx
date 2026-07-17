@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import {
   LayoutDashboard, BookOpen, MessageSquare, FileText,
-  CalendarCheck, Bot, Megaphone, BarChart2, User, Settings, Activity,
+  CalendarCheck, Bot, Megaphone, BarChart2, User, Settings, Activity, Award,
   LayoutGrid, Calendar, Folder, Bell, Download, ChevronRight, ChevronLeft, LogOut, Target,
   Sparkles, Trophy
 } from 'lucide-react';
@@ -23,6 +23,7 @@ const MENU = [
   { id: 'reports',        label: 'My Reports',     icon: FileText        },
   { id: 'attendance',     label: 'Attendance',     icon: CalendarCheck   },
   { id: 'calendar',       label: 'Calendar',       icon: Calendar        },
+  { id: 'certificate',    label: 'Certificate',    icon: Award           },
   { id: 'files',          label: 'Files',          icon: Folder          },
   { id: 'ai',             label: 'AI Assistant',   icon: Bot             },
   { id: 'qa',             label: 'Q&A Forum',      icon: MessageSquare   },

@@ -4,6 +4,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import * as reports from '../controllers/reports.controller.js';
+import * as feedback from '../controllers/feedback.controller.js';
+import * as certificates from '../controllers/certificates.controller.js';
 import * as announcements from '../controllers/announcements.controller.js';
 import * as qa from '../controllers/qa.controller.js';
 import * as attendance from '../controllers/attendance.controller.js';
@@ -17,7 +19,7 @@ import { validate, schemas } from '../middleware/validate.js';
 const api = Router();
 api.use(authenticate, requireAuth);
 
-const idParam = z.object({ id: z.string().cuid() });
+const idParam = z.object({ id: z.string().min(1) });
 
 // ── Reports ───────────────────────────────────────────────
 api.get(
@@ -69,7 +71,49 @@ api.patch(
   reports.review
 );
 api.delete('/reports/:id', requirePermission('reports:delete'), validate(idParam, 'params'), reports.remove);
+// ── Mentor Feedback ───────────────────────────────────────
+api.get(
+  '/feedback',
+  requirePermission('feedback:read'),
+  validate(schemas.pagination, 'query'),
+  feedback.list
+);
+api.get('/feedback/:id', requirePermission('feedback:read'), validate(idParam, 'params'), feedback.getById);
+api.post(
+  '/feedback',
+  requirePermission('feedback:create'),
+  validate(
+    z.object({
+      internId: z.string().cuid(),
+      rating: z.coerce.number().int().min(1).max(5),
+      completionStatus: z.enum(['IN_PROGRESS', 'COMPLETED', 'TERMINATED']).default('IN_PROGRESS'),
+      comments: z.string().max(2000).optional(),
+    })
+  ),
+  feedback.create
+);
 
+// ── Certificates ──────────────────────────────────────────
+api.get(
+  '/certificates',
+  requirePermission('certificates:read'),
+  validate(schemas.pagination, 'query'),
+  certificates.list
+);
+api.get('/certificates/:id', requirePermission('certificates:read'), validate(idParam, 'params'), certificates.getById);
+api.post(
+  '/certificates/generate',
+  requirePermission('certificates:generate'),
+  validate(
+    z.object({
+      feedbackId: z.string().cuid(),
+      role: z.string().max(120).optional(),
+      startDate: z.coerce.date(),
+      endDate: z.coerce.date(),
+    })
+  ),
+  certificates.generate
+);
 // ── Announcements ─────────────────────────────────────────
 api.get(
   '/announcements',
@@ -199,6 +243,18 @@ api.patch(
   projects.updateProject
 );
 api.delete('/projects/:id', requirePermission('projects:delete'), validate(idParam, 'params'), projects.deleteProject);
+api.patch(
+  '/projects/:id/interns',
+  requirePermission('projects:update'),
+  validate(idParam, 'params'),
+  validate(
+    z.object({
+      userId: z.string().cuid(),
+      remove: z.boolean().optional(),
+    })
+  ),
+  projects.assignIntern
+);
 
 api.get('/tasks', requirePermission('tasks:read'), validate(schemas.pagination, 'query'), projects.listTasks);
 api.post(
@@ -206,8 +262,8 @@ api.post(
   requirePermission('tasks:create'),
   validate(
     z.object({
-      projectId: z.string().cuid(),
-      assigneeId: z.string().cuid().optional().nullable(),
+      projectId: z.string().min(1),
+      assigneeId: z.string().min(1).optional().nullable(),
       title: z.string().min(3).max(200),
       description: z.string().max(2000).optional(),
       status: z.enum(['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE', 'BLOCKED']).default('TODO'),
@@ -230,7 +286,7 @@ api.patch(
       priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).optional(),
       dueDate: z.coerce.date().optional(),
       attachmentIds: z.array(z.string().cuid()).optional(),
-      assigneeId: z.string().cuid().nullable().optional(),
+      assigneeId: z.string().min(1).nullable().optional(),
     })
   ),
   projects.updateTask
