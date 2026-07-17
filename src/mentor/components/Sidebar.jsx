@@ -6,6 +6,7 @@ import {
   LayoutDashboard, Users, FileText, Activity, ClipboardList,
   ListChecks, BookOpen, MessageSquare,
   Megaphone, Bot, User, Settings, ChevronLeft, ChevronRight, LogOut,
+  CalendarCheck,
 } from 'lucide-react';
 import { useAuthStore } from '../../lib/auth';
 import { APP_CONSTANTS } from '../../shared/config/constants';
@@ -17,6 +18,7 @@ const MENU = [
   { id: 'projects', label: 'Projects', icon: Activity },
   { id: 'assignments', label: 'Assignments', icon: ClipboardList }, // NEW
   { id: 'taskdashboard', label: 'Task Dashboard', icon: ListChecks }, // NEW
+  { id: 'leave-approvals', label: 'Leave Approvals', icon: CalendarCheck },
   { id: 'knowledge', label: 'Knowledge Base', icon: BookOpen },
   { id: 'feedback', label: 'Feedback', icon: MessageSquare },
   { id: 'qa', label: 'Q&A Forum', icon: MessageSquare },

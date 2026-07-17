@@ -8,7 +8,6 @@ import {
   Clock, ArrowUpRight, ShieldCheck, Flame, Zap, Award
 } from 'lucide-react';
 import { Card, SectionHeader, Badge } from '../../shared/components/UI';
-import api from '../../lib/api';
 
 const MotionDiv = motion.div;
 
@@ -58,7 +57,7 @@ const LeaderboardSystem = () => {
         }
 
         setInterns(data);
-      } catch (err) {
+      } catch {
         /* ignore */
       } finally {
         setLoading(false);

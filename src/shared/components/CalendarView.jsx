@@ -24,8 +24,8 @@ const CalendarView = () => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
+  const monthStart = useMemo(() => startOfMonth(currentMonth), [currentMonth]);
+  const monthEnd = useMemo(() => endOfMonth(currentMonth), [currentMonth]);
   const gridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
   const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const days = [];
@@ -40,7 +40,7 @@ const CalendarView = () => {
       .catch(() => {})
       .finally(() => setLoading(false));
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [currentMonth]);
+  }, [monthEnd, monthStart]);
 
   const meetingsByDay = useMemo(() => {
     const m = new Map();

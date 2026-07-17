@@ -72,6 +72,8 @@ model User {
   internProfile     InternProfile?
   mentorProfile     MentorProfile?
   mentorOf          InternProfile[] @relation("MentorRelation")
+  leaveRequests     LeaveRequest[]  @relation("LeaveRequester")
+  reviewedLeaves    LeaveRequest[]  @relation("LeaveReviewer")
   organizedMeetings Meeting[]      @relation("OrganizedMeetings")
   meetingAttendees  MeetingAttendee[]
 
@@ -195,6 +197,12 @@ enum AttendanceStatus {
   LATE
 }
 
+enum LeaveRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model Attendance {
   id        String          @id @default(cuid())
   userId    String
@@ -211,6 +219,27 @@ model Attendance {
   @@unique([userId, date])
   @@index([date])
   @@index([status])
+}
+
+model LeaveRequest {
+  id           String             @id @default(cuid())
+  userId       String
+  user         User               @relation("LeaveRequester", fields: [userId], references: [id], onDelete: Cascade)
+  leaveType    String
+  startDate    DateTime           @db.Date
+  endDate      DateTime           @db.Date
+  reason       String
+  status       LeaveRequestStatus @default(PENDING)
+  reviewerId   String?
+  reviewer     User?              @relation("LeaveReviewer", fields: [reviewerId], references: [id])
+  reviewerNote String?
+  reviewedAt   DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate, endDate])
 }
 
 // ── Projects & Tasks ───────────────────────────────────────

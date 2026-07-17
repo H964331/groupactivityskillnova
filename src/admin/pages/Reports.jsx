@@ -1,7 +1,7 @@
 // ════════════════════════════════════════════════════════════
 //  ADMIN — pages/Reports.jsx (API-driven)
 // ════════════════════════════════════════════════════════════
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FileText, Loader2, CheckCircle, Star } from 'lucide-react';
 import { Card, Badge, SectionHeader, Modal } from '../../shared/components/UI';
 import api from '../../lib/api';
@@ -18,21 +18,21 @@ const AdminReports = () => {
   const [score, setScore] = useState('');
   const [feedback, setFeedback] = useState('');
 
-  const fetch = async () => {
+  const fetchReports = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await api.get('/reports', { params: { limit: 50, status: filter === 'ALL' ? undefined : filter } });
       setReports(data.items);
     } finally { setLoading(false); }
-  };
-  useEffect(() => { fetch(); }, [filter]);
+  }, [filter]);
+  useEffect(() => { fetchReports(); }, [fetchReports]);
 
   const review = async () => {
     try {
       await api.patch(`/reports/${reviewing.id}/review`, { status: 'REVIEWED', score: score ? Number(score) : undefined, feedback });
       notify.success('Report reviewed.');
       setReviewing(null); setScore(''); setFeedback('');
-      fetch();
+      fetchReports();
     } catch (err) { notify.error(err.response?.data?.error || 'Failed.'); }
   };
 
